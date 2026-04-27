@@ -7,9 +7,8 @@ import (
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/google/uuid"
+	"github.com/oneweave/oneweave-pubsub/shared"
 )
-
-const defaultDataContentType = "application/json"
 
 // Config controls publisher defaults.
 type Config struct {
@@ -61,7 +60,7 @@ func (p *Publisher) Publish(ctx context.Context, eventType string, payload any, 
 		return cloudevents.Event{}, fmt.Errorf("event type is required")
 	}
 
-	options := publishOptions{dataContentType: defaultDataContentType}
+	options := publishOptions{dataContentType: shared.JSONContentType}
 	for _, opt := range opts {
 		opt(&options)
 	}
@@ -84,12 +83,10 @@ func (p *Publisher) Publish(ctx context.Context, eventType string, payload any, 
 
 	contentType := options.dataContentType
 	if contentType == "" {
-		contentType = defaultDataContentType
+		contentType = shared.JSONContentType
 	}
-	event.SetDataContentType(contentType)
-
-	if err := event.SetData(contentType, payload); err != nil {
-		return cloudevents.Event{}, fmt.Errorf("set cloudevent data: %w", err)
+	if err := shared.SetEventData(&event, contentType, payload); err != nil {
+		return cloudevents.Event{}, err
 	}
 	if err := p.sender.Send(ctx, event); err != nil {
 		return cloudevents.Event{}, fmt.Errorf("send cloudevent: %w", err)

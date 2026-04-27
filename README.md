@@ -5,7 +5,38 @@ A lightweight Go library for producing and consuming CloudEvents in pub/sub work
 ## Packages
 
 - `produce`: High-level publisher helpers that wrap payloads as CloudEvents.
-- `consume`: High-level consumer helpers for decoding CloudEvent data.
+- `consume`: HTTP consumer helpers for parsing CloudEvents from requests.
+- `shared`: Reusable CloudEvent JSON helpers shared by produce and consume.
+
+## HTTP Consumer
+
+```go
+package main
+
+import (
+    "log"
+    "net/http"
+
+    "github.com/oneweave/oneweave-pubsub/consume"
+)
+
+func main() {
+    httpConsumer := consume.NewHTTPConsumer()
+
+    http.HandleFunc("/events", func(w http.ResponseWriter, r *http.Request) {
+        event, err := httpConsumer.ConsumeHTTPRequest(r)
+        if err != nil {
+            http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+            return
+        }
+        // Use the parsed event directly.
+        _ = event
+        w.WriteHeader(http.StatusNoContent)
+    })
+
+    log.Fatal(http.ListenAndServe(":8080", nil))
+}
+```
 
 ## Quick Start
 
